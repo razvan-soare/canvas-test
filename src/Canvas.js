@@ -6,15 +6,6 @@ import _ from "lodash";
 // Represents the canvas itself and provides functions for setup and drawing etc
 const Canvas = function() {};
 
-Canvas.prototype.draw_line = function(start_position, end_position, colour) {
-  this.config.ctx.beginPath();
-  this.config.ctx.moveTo(start_position.x, start_position.y);
-  this.config.ctx.lineTo(end_position.x, end_position.y);
-  this.config.ctx.strokeStyle = colour;
-  this.config.ctx.lineWidth = this.line_width;
-  this.config.ctx.stroke();
-};
-
 Canvas.prototype.draw_circle = function(position, radius, colour) {
   this.config.ctx.beginPath();
   this.config.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2, true);
@@ -31,22 +22,22 @@ Canvas.prototype.init = function(config) {
 
   var context = this;
 
-  this.parseCircleJsonIntoCircles();
+  this.generatePoints();
 
   // on mouse move, save mouse position
+  // TODO chenge from mousemove to on scroll
   window.addEventListener(
-    "mousemove",
+    "scroll",
     _.throttle(e => {
-      context.mouse_position = new Coordinates(e.pageX, e.pageY);
+      context.scroll_position = window.scrollY;
     }, 150)
   );
 
   // draw every N frames
-  // this.draw.bind(this);
   this.interval_id = setInterval(this.draw.bind(this), this.config.framerate);
 };
 
-Canvas.prototype.parseCircleJsonIntoCircles = function() {
+Canvas.prototype.generatePoints = function() {
   // clear existing circles
   this.circle_groups = [];
   const shuffledArray = [];
@@ -81,41 +72,24 @@ Canvas.prototype.parseCircleJsonIntoCircles = function() {
   // Shuffle the array
   shuffle(shuffledArray);
 
-  // Create the actuall point
+  // Create the actuall circles
   let shuffledIndex = 0;
   for (let i = 0; i < n; i++) {
     const group = [];
     for (let j = 0; j < m; j++) {
-      const start_position = initialPositions[i][j];
-      const final_position = shuffledArray[shuffledIndex++];
+      const start_position = shuffledArray[shuffledIndex++];
+      const final_position = initialPositions[i][j];
       const circle = new Circle(
         start_position,
         final_position,
         context,
         context.config,
-        build_rgba(255 - j * 20, 200, 0, 1)
+        build_rgba(255 - j * 15, j * 10, j * 30, 1)
       );
       group.push(circle);
     }
     this.circle_groups.push(group);
   }
-};
-
-Canvas.prototype.calculateDistanceFromMouseToElement = function(element) {
-  if (typeof this.mouse_position === "undefined") return null;
-  return Math.floor(
-    Math.sqrt(
-      Math.pow(
-        this.mouse_position.x - (element.offsetLeft + element.offsetWidth / 2),
-        2
-      ) +
-        Math.pow(
-          this.mouse_position.y -
-            (element.offsetTop + element.offsetHeight / 2),
-          2
-        )
-    )
-  );
 };
 
 Canvas.prototype.clear = function() {
@@ -140,23 +114,19 @@ Canvas.prototype.setDistanceAsPercentage = function(new_value) {
 };
 
 Canvas.prototype.draw = function() {
-  // check if canvas exists?
-  // TODO Come back and check for canvas:visible
-
   this.setDimensions();
 
   // clear existing drawings
   this.clear();
 
-  // calculate mouse distance to element
-  this.distance = this.calculateDistanceFromMouseToElement(
-    document.querySelector(this.config.target_element_selector)
-  );
+  // calculate distance from origin
+  this.distance = this.scroll_position || 0;
 
-  if (this.distance != null) {
+  if (this.distance !== null) {
+    debugger;
     this.setDistanceAsPercentage(
       Math.max(
-        (this.distance / this.config.min_mouse_distance) * 100 -
+        (this.distance / this.config.min_distance) * 100 -
           this.config.target_distance_leniency,
         0
       )
