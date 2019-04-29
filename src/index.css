@@ -15,7 +15,8 @@ code {
     monospace;
 }
 
-body, html {
+body,
+html {
   font-size: 10px;
   height: 100%;
 }
