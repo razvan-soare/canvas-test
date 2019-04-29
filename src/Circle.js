@@ -46,7 +46,7 @@ const Circle = function(
   };
 
   // draw the circle on the canvas
-  this.draw = function(last_circle, distance_as_percentage, noise_x, noise_y) {
+  this.draw = function() {
     if (
       typeof this.position === "undefined" ||
       isNaN(this.position.x) ||

@@ -6,10 +6,10 @@ import _ from "lodash";
 // Represents the canvas itself and provides functions for setup and drawing etc
 const Canvas = function() {};
 
-Canvas.prototype.draw_circle = function(position, radius, colour) {
+Canvas.prototype.draw_circle = function(position, radius, color) {
   this.config.ctx.beginPath();
   this.config.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2, true);
-  this.config.ctx.fillStyle = colour;
+  this.config.ctx.fillStyle = color;
   this.config.ctx.fill();
   this.config.ctx.closePath();
 };
@@ -21,11 +21,10 @@ Canvas.prototype.init = function(config) {
   this.text_alpha = 1;
 
   var context = this;
-
   this.generatePoints();
 
-  // on mouse move, save mouse position
-  // TODO chenge from mousemove to on scroll
+  // on scroll move, save scroll position
+  context.scroll_position = window.scrollY;
   window.addEventListener(
     "scroll",
     _.throttle(e => {
@@ -109,7 +108,6 @@ Canvas.prototype.setDistanceAsPercentage = function(new_value) {
   if (new_value > this.config.max_distance_as_percentage)
     new_value = this.config.max_distance_as_percentage;
 
-  this._old_distance_as_percentage = this.distance_as_percentage;
   this.distance_as_percentage = new_value;
 };
 
@@ -123,7 +121,6 @@ Canvas.prototype.draw = function() {
   this.distance = this.scroll_position || 0;
 
   if (this.distance !== null) {
-    debugger;
     this.setDistanceAsPercentage(
       Math.max(
         (this.distance / this.config.min_distance) * 100 -
@@ -148,17 +145,9 @@ Canvas.prototype.draw = function() {
   );
 
   this.circle_groups.map(circle_group => {
-    var last_circle = null;
-
     circle_group.map(circle => {
       // draw circle
-      circle.draw(
-        last_circle,
-        context.distance_as_percentage,
-        context.config.noise_x,
-        context.config.noise_y
-      );
-      last_circle = circle;
+      circle.draw(context.distance_as_percentage);
     });
   });
 };
