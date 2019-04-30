@@ -37,7 +37,7 @@ const Circle = function(intervals, canvas, canvas_config, color) {
       start_position = this.intervals[startIndex];
       end_position = this.intervals[startIndex + 1];
     }
-    // console.log(start_position, end_position);
+    
 
     this.lerp(
       end_position

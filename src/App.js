@@ -12,20 +12,17 @@ class CanvasClass extends React.Component {
     const canvas = this.myCanvas.current;
     const maxHeight = document.documentElement.scrollHeight -
     document.documentElement.clientHeight;
-    console.log(maxHeight)
+
     // create configuration
     const canvas_config = {
       // CANVAS //
       ctx: canvas.getContext("2d"), // canvas 2d context
       canvas_element: canvas,
-      canvas_height: 440,
+      canvas_height: 450,
       canvas_width: 1300,
 
       // WORKINGS //
       framerate: 25,
-      target_element_selector: ".test-element", // the element the mouse must be on to reveal the image
-      image_width: 645,
-      image_height: 400,
       max_distance_as_percentage: 100, // the highest value for distance as percentage
 
       // Scroll //
@@ -41,7 +38,7 @@ class CanvasClass extends React.Component {
 
       // CIRCLES //
       circle_radius: 5,
-      circle_size: { w: 50, h: 50 },
+      circle_size: { w: 25, h: 25 },
       // start_position_off_canvas_limit_x: 50, // how far the circle start positions can be off the canvas
       // start_position_off_canvas_limit_y: 50,
       circle_movement_speed: 0.1, // the speed modifier for circles. 0.05 is a smooth and medium speed value
