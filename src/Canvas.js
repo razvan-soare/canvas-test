@@ -61,8 +61,8 @@ Canvas.prototype.generatePoints = function() {
     const group = [];
     for (let j = 0; j < m; j++) {
       const point = new Coordinates(
-        i * circle_size.w + circle_size.w / 2 - circle_radius / 2,
-        j * circle_size.h + circle_size.h / 2 - circle_radius / 2
+        i * circle_size.w + circle_size.w / 2,
+        j * circle_size.h + circle_size.h / 2
       );
 
       group.push(point);
@@ -128,8 +128,7 @@ Canvas.prototype.setDimensions = function() {
 
 //set distance_as_percentage variable and trigger related events
 Canvas.prototype.setDistanceAsPercentage = function(new_value) {
-  if (new_value > this.config.max_distance_as_percentage)
-    new_value = this.config.max_distance_as_percentage;
+  if (new_value > 100) new_value = 100;
 
   this.distance_as_percentage = new_value;
 };
@@ -144,15 +143,13 @@ Canvas.prototype.draw = function() {
   this.distance = this.scroll_position || 0;
 
   // find in what interval we are
-  let activeInterval = this.config.scroll_intervals.find(
-    (interval, index) => {
-      if (this.distance >= interval.start && this.distance <= interval.stop) {
-        this.intervalIndex = index;
-        return true;
-      }
-      return null;
+  let activeInterval = this.config.scroll_intervals.find((interval, index) => {
+    if (this.distance >= interval.start && this.distance <= interval.stop) {
+      this.intervalIndex = index;
+      return true;
     }
-  );
+    return null;
+  });
 
   if (activeInterval === undefined || activeInterval === -1) {
     let min = 1000;
@@ -166,7 +163,7 @@ Canvas.prototype.draw = function() {
       }
     });
     if (selectedIndex === this.config.scroll_intervals.length) {
-      selectedIndex = this.config.scroll_intervals.length - 1
+      selectedIndex = this.config.scroll_intervals.length - 1;
     }
     this.intervalIndex = selectedIndex;
     activeInterval = this.config.scroll_intervals[selectedIndex];

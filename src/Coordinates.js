@@ -27,12 +27,6 @@ const Coordinates = function(x, y) {
     this_new.y *= amount;
     return this_new;
   };
-  this.divide = function(amount) {
-    const this_new = this.copy();
-    this_new.x /= amount;
-    this_new.y /= amount;
-    return this_new;
-  };
 
   this.equals = function(coordinates) {
     if (coordinates.x === this.x && coordinates.y === this.y) return true;
