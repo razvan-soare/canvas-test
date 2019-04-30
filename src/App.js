@@ -10,7 +10,9 @@ class CanvasClass extends React.Component {
   componentDidMount() {
     // get canvas element
     const canvas = this.myCanvas.current;
-
+    const maxHeight = document.documentElement.scrollHeight -
+    document.documentElement.clientHeight;
+    console.log(maxHeight)
     // create configuration
     const canvas_config = {
       // CANVAS //
@@ -27,17 +29,24 @@ class CanvasClass extends React.Component {
       max_distance_as_percentage: 100, // the highest value for distance as percentage
 
       // Scroll //
-      min_distance: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      scroll_intervals: [
+        { start: 0, stop: 500 },
+        { start: 900, stop: 1400 },
+        { start: 2000, stop: maxHeight }
+      ],
+      min_distance:
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight,
       target_distance_leniency: 0, // scroll can be this far away from target element and still be considered "on it"
 
       // CIRCLES //
       circle_radius: 5,
       circle_size: { w: 50, h: 50 },
-      start_position_off_canvas_limit_x: 50, // how far the circle start positions can be off the canvas
-      start_position_off_canvas_limit_y: 50,
+      // start_position_off_canvas_limit_x: 50, // how far the circle start positions can be off the canvas
+      // start_position_off_canvas_limit_y: 50,
       circle_movement_speed: 0.1, // the speed modifier for circles. 0.05 is a smooth and medium speed value
-      noise_x: 2, // amount of random movement on the x axis to add when circle is in the end_position
-      noise_y: 2
+      // noise_x: 2, // amount of random movement on the x axis to add when circle is in the end_position
+      // noise_y: 2
     };
 
     window.myObject = {};

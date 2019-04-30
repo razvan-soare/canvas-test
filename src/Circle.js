@@ -1,22 +1,15 @@
 import Coordinates from "./Coordinates";
 
 // Represents a circle on the canvas
-const Circle = function(
-  start_position,
-  end_position,
-  canvas,
-  canvas_config,
-  color
-) {
+const Circle = function(intervals, canvas, canvas_config, color) {
   // remember all params
-  this.start_position = start_position;
-  this.end_position = end_position;
+  this.intervals = intervals;
   this.canvas = canvas;
   this.canvas_config = canvas_config;
   this.color = color;
 
   // set current position
-  this.position = new Coordinates(start_position.x, start_position.y);
+  this.position = new Coordinates(intervals[0].x, intervals[0].y);
 
   // lerp function - move gradually frame by frame
   this.lerp = function(target_position) {
@@ -29,19 +22,30 @@ const Circle = function(
   };
 
   // update this.position according to how far towards the end position the circle should be
-  this.update_position = function(distance_as_percentage) {
+  this.update_position = function(startIndex, distance_as_percentage) {
     if (distance_as_percentage > 100 || distance_as_percentage < 0)
       throw "distance_as_percentage must be between 0 and 100";
     if (isNaN(distance_as_percentage))
       throw "distance_as_percentage must be a number";
 
     distance_as_percentage /= 100;
+
+    let start_position = this.intervals[startIndex];
+    let end_position = this.intervals[startIndex];
+
+    if (startIndex !== this.intervals.length - 1) {
+      start_position = this.intervals[startIndex];
+      end_position = this.intervals[startIndex + 1];
+    }
+    // console.log(start_position, end_position);
+
     this.lerp(
-      this.start_position
-        .minus(this.end_position)
+      end_position
+        .minus(start_position)
         .times(distance_as_percentage)
-        .plus(this.end_position)
+        .plus(start_position)
     );
+
     return this;
   };
 

@@ -19,7 +19,8 @@ Canvas.prototype.init = function(config) {
   this.config = config;
   this.setDimensions();
   this.text_alpha = 1;
-
+  this.intervalIndex = 0;
+  this.activeInterval = 0;
   var context = this;
   this.generatePoints();
 
@@ -39,8 +40,10 @@ Canvas.prototype.init = function(config) {
 Canvas.prototype.generatePoints = function() {
   // clear existing circles
   this.circle_groups = [];
-  const shuffledArray = [];
-  const initialPositions = [];
+  const intervalOne = [];
+  const intervalTwo = [];
+  let intervalThree = [];
+  const intervalFour = [];
 
   // circles in the same array will be connected by a line
   const context = this;
@@ -50,37 +53,57 @@ Canvas.prototype.generatePoints = function() {
     canvas_height
   } = context;
 
-  const n = canvas_width / circle_size.w;
-  const m = canvas_height / circle_size.h;
+  const n = Math.floor(canvas_width / circle_size.w);
+  const m = Math.floor(canvas_height / circle_size.h);
 
   // Create the initial points and set the initial position
   for (let i = 0; i < n; i++) {
     const group = [];
     for (let j = 0; j < m; j++) {
-      const start_position = new Coordinates(
+      const point = new Coordinates(
         i * circle_size.w + circle_size.w / 2 - circle_radius / 2,
         j * circle_size.h + circle_size.h / 2 - circle_radius / 2
       );
 
-      group.push(start_position);
-      shuffledArray.push(start_position);
+      group.push(point);
+      intervalTwo.push(point);
     }
-    initialPositions.push(group);
+    intervalOne.push(group);
   }
 
   // Shuffle the array
-  shuffle(shuffledArray);
+  shuffle(intervalTwo);
+  // Copy interval two as interval three
+  intervalThree = [...intervalTwo];
+  shuffle(intervalThree);
+
+  // Copy interval One as interval four
+  for (let i = 0; i < n; i++) {
+    const group = [];
+    for (let j = 0; j < m; j++) {
+      group.push(intervalOne[i][j]);
+    }
+    intervalFour.push(group);
+  }
+  // Flip interval four
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < m; j++) {
+      intervalFour[i][j] = intervalOne[i][m - j - 1];
+    }
+  }
 
   // Create the actuall circles
   let shuffledIndex = 0;
   for (let i = 0; i < n; i++) {
     const group = [];
     for (let j = 0; j < m; j++) {
-      const start_position = shuffledArray[shuffledIndex++];
-      const final_position = initialPositions[i][j];
+      const i1 = intervalOne[i][j];
+      const i2 = intervalTwo[shuffledIndex];
+      const i3 = intervalThree[shuffledIndex];
+      const i4 = intervalFour[i][j];
+      shuffledIndex += 1;
       const circle = new Circle(
-        start_position,
-        final_position,
+        [i1, i2, i3, i4],
         context,
         context.config,
         build_rgba(255 - j * 15, j * 10, j * 30, 1)
@@ -120,11 +143,40 @@ Canvas.prototype.draw = function() {
   // calculate distance from origin
   this.distance = this.scroll_position || 0;
 
+  // find in what interval we are
+  let activeInterval = this.config.scroll_intervals.find(
+    (interval, index) => {
+      if (this.distance >= interval.start && this.distance <= interval.stop) {
+        this.intervalIndex = index;
+        return true;
+      }
+      return null;
+    }
+  );
+
+  if (activeInterval === undefined || activeInterval === -1) {
+    let min = 1000;
+    let selectedIndex = 0;
+    this.config.scroll_intervals.map((interval, index) => {
+      let delta = this.distance - interval.start;
+      if (delta < 0) delta *= -1;
+      if (delta < min) {
+        min = delta;
+        selectedIndex = index;
+      }
+    });
+    if (selectedIndex === this.config.scroll_intervals.length) {
+      selectedIndex = this.config.scroll_intervals.length - 1
+    }
+    this.intervalIndex = selectedIndex;
+    activeInterval = this.config.scroll_intervals[selectedIndex];
+  }
+
   if (this.distance !== null) {
     this.setDistanceAsPercentage(
       Math.max(
-        (this.distance / this.config.min_distance) * 100 -
-          this.config.target_distance_leniency,
+        ((this.distance - activeInterval.start) * 100) /
+          (activeInterval.stop - activeInterval.start),
         0
       )
     );
@@ -140,14 +192,18 @@ Canvas.prototype.draw = function() {
       if (context.distance_as_percentage > 100) {
         context.setDistanceAsPercentage(100);
       }
-      return circle.update_position(context.distance_as_percentage);
+
+      return circle.update_position(
+        this.intervalIndex,
+        context.distance_as_percentage
+      );
     })
   );
 
   this.circle_groups.map(circle_group => {
     circle_group.map(circle => {
       // draw circle
-      circle.draw(context.distance_as_percentage);
+      circle.draw();
     });
   });
 };
