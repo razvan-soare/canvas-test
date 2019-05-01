@@ -1,5 +1,6 @@
 import shuffle from "./shuffle";
 import randomNumberBetween from "./RandomNumberBetween";
-import build_rgba from "./BuildRgba";
+import BuildRgba from "./BuildRgba";
+import GetRandom from "./GetRandom";
 
-export { shuffle, randomNumberBetween, build_rgba };
+export { shuffle, randomNumberBetween, GetRandom, BuildRgba };

@@ -26,7 +26,7 @@ html {
   background: lightgreen;
   margin: 0 auto;
   font-size: 1.5rem;
-  height: 500vh;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;

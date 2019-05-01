@@ -1,69 +1,61 @@
-import Coordinates from "./Coordinates";
+import { GetRandom, BuildRgba } from "./helpers";
 
 // Represents a circle on the canvas
-const Circle = function(intervals, canvas, canvas_config, color) {
+const Circle = function(x, y, canvas, canvas_config, move = true) {
+  this.x = x;
+  this.y = y;
+  this.radius = move ? GetRandom(1, canvas_config.circle_radius) : 1;
+  const movement = move ? canvas_config.circle_movement_speed : 0;
+
+  this.x_dir = GetRandom(-movement, movement);
+  this.y_dir = GetRandom(-movement, movement);
+
   // remember all params
-  this.intervals = intervals;
   this.canvas = canvas;
   this.canvas_config = canvas_config;
-  this.color = color;
+  const r = GetRandom(0, 255);
+  const g = GetRandom(0, 255);
+  const b = GetRandom(0, 255);
+  this.color = BuildRgba(r, g, b, 1);
 
-  // set current position
-  this.position = new Coordinates(intervals[0].x, intervals[0].y);
-
-  // lerp function - move gradually frame by frame
-  this.lerp = function(target_position) {
-    this.position.x +=
-      (target_position.x - this.position.x) *
-      this.canvas_config.circle_movement_speed;
-    this.position.y +=
-      (target_position.y - this.position.y) *
-      this.canvas_config.circle_movement_speed;
+  // Handle movement
+  this.update_position = function() {
+    this.x += this.x_dir;
+    this.y += this.y_dir;
   };
 
-  // update this.position according to how far towards the end position the circle should be
-  this.update_position = function(startIndex, distance_as_percentage) {
-    if (distance_as_percentage > 100 || distance_as_percentage < 0)
-      throw "distance_as_percentage must be between 0 and 100";
-    if (isNaN(distance_as_percentage))
-      throw "distance_as_percentage must be a number";
-
-    distance_as_percentage /= 100;
-
-    let start_position = this.intervals[startIndex];
-    let end_position = this.intervals[startIndex];
-
-    if (startIndex !== this.intervals.length - 1) {
-      start_position = this.intervals[startIndex];
-      end_position = this.intervals[startIndex + 1];
-    }
-    
-
-    this.lerp(
-      end_position
-        .minus(start_position)
-        .times(distance_as_percentage)
-        .plus(start_position)
+  this.isInProximity = function(other) {
+    const dist = Math.sqrt(
+      Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2)
     );
 
-    return this;
+    return dist < this.radius + other.radius + this.canvas_config.proximity;
   };
 
   // draw the circle on the canvas
   this.draw = function() {
-    if (
-      typeof this.position === "undefined" ||
-      isNaN(this.position.x) ||
-      isNaN(this.position.y)
-    )
+    if (isNaN(this.x) || isNaN(this.y))
       throw "Circle position undefined or NaN";
 
+    if (this.x < 0) {
+      this.x_dir = GetRandom(0, movement);
+      this.y_dir = GetRandom(-movement, movement);
+    } else if (this.x > canvas_config.canvas_width) {
+      this.x_dir = GetRandom(-movement, 0);
+      this.y_dir = GetRandom(-movement, movement);
+    } else if (this.y < 0) {
+      this.x_dir = GetRandom(-movement, movement);
+      this.y_dir = GetRandom(0, movement);
+    } else if (this.y > canvas_config.canvas_height) {
+      this.x_dir = GetRandom(-movement, movement);
+      this.y_dir = GetRandom(-movement, -1);
+    }
+
+    if (this.x_dir === 0 && move) this.x_dir++;
+    if (this.y_dir === 0 && move) this.y_dir++;
+
     // draw the circle
-    this.canvas.draw_circle(
-      this.position,
-      this.canvas_config.circle_radius,
-      this.color
-    );
+    this.canvas.draw_circle(this.x, this.y, this.radius, this.color);
   };
 };
 
