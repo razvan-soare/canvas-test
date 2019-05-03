@@ -23,7 +23,7 @@ html {
 
 .dot-experiment {
   position: realtive;
-  background: lightgreen;
+  /* background: lightgreen; */
   margin: 0 auto;
   font-size: 1.5rem;
   height: 100vh;
@@ -34,7 +34,7 @@ html {
 }
 
 canvas {
-  background: rgb(19, 5, 68);
+  /* background: rgb(19, 5, 68); */
   position: fixed;
   top: 50%;
   left: 50%;

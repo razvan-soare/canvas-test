@@ -1,35 +1,48 @@
 import { GetRandom, BuildRgba } from "./helpers";
 
 // Represents a circle on the canvas
-const Circle = function(x, y, canvas, canvas_config, move = true) {
+const Circle = function(x, y, canvas, canvas_config) {
   this.x = x;
   this.y = y;
-  this.radius = move ? GetRandom(1, canvas_config.circle_radius) : 1;
-  const movement = move ? canvas_config.circle_movement_speed : 0;
+  this.history = [];
+  this.initialX = x;
+  this.initialY = y;
 
-  this.x_dir = GetRandom(-movement, movement);
-  this.y_dir = GetRandom(-movement, movement);
-
+  this.radius = 2;
+  this.velocity = -0.06;
+  this.radians = Math.random() * Math.PI * 2;
+  this.distance = GetRandom(10, 50);
+  this.lastPosition = {
+    x: 0,
+    y: 0
+  };
   // remember all params
   this.canvas = canvas;
   this.canvas_config = canvas_config;
+
+  // Generate a random color
   const r = GetRandom(0, 255);
   const g = GetRandom(0, 255);
   const b = GetRandom(0, 255);
-  this.color = BuildRgba(r, g, b, 1);
+  const a = 1;
+  this.color = { r, g, b, a };
 
   // Handle movement
-  this.update_position = function() {
-    this.x += this.x_dir;
-    this.y += this.y_dir;
-  };
+  this.update_position = function(x, y) {
+    this.initialX = x;
+    this.initialY = y;
+    
+    this.lastPosition = {
+      x: this.x,
+      y: this.y
+    };
 
-  this.isInProximity = function(other) {
-    const dist = Math.sqrt(
-      Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2)
-    );
-
-    return dist < this.radius + other.radius + this.canvas_config.proximity;
+    this.history.push(this.lastPosition);
+    if (this.history.length > 10) this.history.splice(0, 1);
+    
+    this.radians += this.velocity;
+    this.x = this.initialX + Math.sin(this.radians) * this.distance;
+    this.y = this.initialY + Math.cos(this.radians) * this.distance;
   };
 
   // draw the circle on the canvas
@@ -37,25 +50,29 @@ const Circle = function(x, y, canvas, canvas_config, move = true) {
     if (isNaN(this.x) || isNaN(this.y))
       throw "Circle position undefined or NaN";
 
-    if (this.x < 0) {
-      this.x_dir = GetRandom(0, movement);
-      this.y_dir = GetRandom(-movement, movement);
-    } else if (this.x > canvas_config.canvas_width) {
-      this.x_dir = GetRandom(-movement, 0);
-      this.y_dir = GetRandom(-movement, movement);
-    } else if (this.y < 0) {
-      this.x_dir = GetRandom(-movement, movement);
-      this.y_dir = GetRandom(0, movement);
-    } else if (this.y > canvas_config.canvas_height) {
-      this.x_dir = GetRandom(-movement, movement);
-      this.y_dir = GetRandom(-movement, -1);
-    }
+    this.canvas.draw_line(
+      this.x,
+      this.y,
+      this.lastPosition.x,
+      this.lastPosition.y,
+      this.color,
+      this.radius * 2
+    );
 
-    if (this.x_dir === 0 && move) this.x_dir++;
-    if (this.y_dir === 0 && move) this.y_dir++;
-
-    // draw the circle
-    this.canvas.draw_circle(this.x, this.y, this.radius, this.color);
+    // this.canvas.draw_circle(this.x, this.y, this.radius, this.color);
+    this.history.forEach((his, index) => {
+      // if (this.history[index + 1]) {
+      //   this.canvas.draw_line(
+      //     his.x,
+      //     his.y,
+      //     this.history[index + 1].x,
+      //     this.history[index + 1].y,
+      //     this.color,
+      //     this.radius * 2 - 2
+      //   );
+      // }
+      // this.canvas.draw_circle(his.x, his.y, this.radius, this.color);
+    });
   };
 };
 

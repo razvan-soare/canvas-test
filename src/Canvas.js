@@ -1,5 +1,5 @@
 import Circle from "./Circle";
-import { GetRandom } from "./helpers";
+import { BuildRgba } from "./helpers";
 
 // Represents the canvas itself and provides functions for setup and drawing etc
 const Canvas = function() {};
@@ -7,43 +7,43 @@ const Canvas = function() {};
 Canvas.prototype.draw_circle = function(x, y, radius, color) {
   this.config.ctx.beginPath();
   this.config.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-  this.config.ctx.fillStyle = color;
+  this.config.ctx.fillStyle = BuildRgba(color.r, color.g, color.b, color.a);
   this.config.ctx.fill();
   this.config.ctx.closePath();
 };
 
-Canvas.prototype.draw_line = function(start_x, start_y, end_x, end_y) {
+Canvas.prototype.draw_line = function(
+  start_x,
+  start_y,
+  end_x,
+  end_y,
+  color,
+  width
+) {
   this.config.ctx.beginPath();
   this.config.ctx.moveTo(start_x, start_y);
   this.config.ctx.lineTo(end_x, end_y);
-  this.config.ctx.strokeStyle = "rgba(255,255,255,0.5)";
-  this.config.ctx.lineWidth = this.line_width;
+  this.config.ctx.strokeStyle = BuildRgba(color.r, color.g, color.b, color.a);
+  this.config.ctx.lineWidth = width;
   this.config.ctx.stroke();
 };
 
 Canvas.prototype.init = function(config) {
   // remember options and dimensions
   this.config = config;
-  this.line_width = 1;
-  this.nrCircles = 100;
-  this.threshold = 50;
-  this.mouse_position = { x: 0, y: 0 };
+  this.nrCircles = 20;
+  this.mouse_x = config.canvas_width / 2;
+  this.mouse_y = config.canvas_height / 2;
+  this.lastMouse_x = this.mouse_x;
+  this.lastMouse_y = this.mouse_y;
   this.setDimensions();
   this.generatePoints();
 
-  window.addEventListener(
-    "mousemove",
-    e => (this.mouse_position = { x: e.pageX, y: e.pageY })
-  );
-
-  window.addEventListener("click", e => {
-    for (var i = 0; i < 4; i++) {
-      const context = this;
-
-      const circle = new Circle(e.clientX, e.clientY, context, context.config);
-      this.circles.push(circle);
-    }
+  window.addEventListener("mousemove", e => {
+    this.mouse_x = e.clientX;
+    this.mouse_y = e.clientY;
   });
+
   // draw every N frames
   this.interval_id = setInterval(this.draw.bind(this), this.config.framerate);
 };
@@ -57,8 +57,8 @@ Canvas.prototype.generatePoints = function() {
 
   // Create the actuall circles
   for (let i = 0; i < this.nrCircles; i++) {
-    const rand_x = GetRandom(0, canvas_width);
-    const rand_y = GetRandom(0, canvas_height);
+    const rand_x = canvas_width / 2;
+    const rand_y = canvas_height / 2;
 
     const circle = new Circle(rand_x, rand_y, context, context.config);
     this.circles.push(circle);
@@ -66,7 +66,11 @@ Canvas.prototype.generatePoints = function() {
 };
 
 Canvas.prototype.clear = function() {
-  this.config.ctx.clearRect(0, 0, this.canvas_width, this.canvas_height);
+  // this.config.ctx.clearRect(0, 0, this.canvas_width, this.canvas_height);
+
+  // One way of creating a trailing effect
+  this.config.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+  this.config.ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 };
 
 Canvas.prototype.setDimensions = function() {
@@ -78,38 +82,22 @@ Canvas.prototype.setDimensions = function() {
 };
 
 Canvas.prototype.draw = function() {
-  this.setDimensions();
+  // this.setDimensions();
 
   // clear existing drawings
   this.clear();
 
-  if (this.nrCircles + this.threshold < this.circles.length) {
-    this.circles.splice(0, 1);
-  }
+  this.lastMouse_x = (this.mouse_x - this.lastMouse_x) * 0.05;
+  this.lastMouse_y = (this.mouse_y - this.lastMouse_y) * 0.05;
 
-  const mouseCircle = new Circle(
-    this.mouse_position.x,
-    this.mouse_position.y,
-    this,
-    this.config,
-    false
-  );
-  this.circles.push(mouseCircle);
-
-  // update circle positions
-  this.circles.map(circle => circle.update_position());
-  const circles = this.circles;
+  // Update circle position
+  this.circles.forEach(circle => {
+    circle.update_position(this.mouse_x, this.mouse_y);
+  });
   // draw circle
-  const n = this.circles.length;
-  for (var i = 0; i < n; i++) {
-    circles[i].draw();
-    for (var j = i + 1; j < n; j++) {
-      if (circles[i].isInProximity(circles[j])) {
-        this.draw_line(circles[i].x, circles[i].y, circles[j].x, circles[j].y);
-      }
-    }
-  }
-  this.circles.pop();
+  this.circles.forEach(circle => {
+    circle.draw();
+  });
 };
 
 Canvas.prototype.stop = function() {
