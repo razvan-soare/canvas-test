@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "gsap": "^2.1.2",
+    "image-to-base64": "^2.0.1",
     "lodash": "^4.17.11",
     "lodash.throttle": "^4.1.1",
     "react": "^16.8.6",

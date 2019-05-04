@@ -1,76 +1,31 @@
-import Circle from "./Circle";
-import { BuildRgba } from "./helpers";
+import image2base64 from "image-to-base64";
+import { TweenMax, Elastic } from "gsap/TweenMax";
 
 // Represents the canvas itself and provides functions for setup and drawing etc
 const Canvas = function() {};
 
-Canvas.prototype.draw_circle = function(x, y, radius, color) {
-  this.config.ctx.beginPath();
-  this.config.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-  this.config.ctx.fillStyle = BuildRgba(color.r, color.g, color.b, color.a);
-  this.config.ctx.fill();
-  this.config.ctx.closePath();
-};
-
-Canvas.prototype.draw_line = function(
-  start_x,
-  start_y,
-  end_x,
-  end_y,
-  color,
-  width
-) {
-  this.config.ctx.beginPath();
-  this.config.ctx.moveTo(start_x, start_y);
-  this.config.ctx.lineTo(end_x, end_y);
-  this.config.ctx.strokeStyle = BuildRgba(color.r, color.g, color.b, color.a);
-  this.config.ctx.lineWidth = width;
-  this.config.ctx.stroke();
-};
-
-Canvas.prototype.init = function(config) {
-  // remember options and dimensions
+Canvas.prototype.init = async function(config) {
   this.config = config;
-  this.nrCircles = 20;
-  this.mouse_x = config.canvas_width / 2;
-  this.mouse_y = config.canvas_height / 2;
-  this.lastMouse_x = this.mouse_x;
-  this.lastMouse_y = this.mouse_y;
-  this.setDimensions();
-  this.generatePoints();
+  this.circles = [];
+  this.canvas_width = config.canvas_width;
+  this.canvas_height = config.canvas_height;
 
-  window.addEventListener("mousemove", e => {
-    this.mouse_x = e.clientX;
-    this.mouse_y = e.clientY;
-  });
+  const imageBase64 = await image2base64("./logo.png");
+  this.image = new Image();
+  this.image.onload = this.draw;
+  this.image.src = imageBase64;
+
+  // remember options and dimensions
+  this.setDimensions();
 
   // draw every N frames
-  this.interval_id = setInterval(this.draw.bind(this), this.config.framerate);
-};
-
-Canvas.prototype.generatePoints = function() {
-  // clear existing circles
-  this.circles = [];
-
-  const context = this;
-  const { canvas_width, canvas_height } = context;
-
-  // Create the actuall circles
-  for (let i = 0; i < this.nrCircles; i++) {
-    const rand_x = canvas_width / 2;
-    const rand_y = canvas_height / 2;
-
-    const circle = new Circle(rand_x, rand_y, context, context.config);
-    this.circles.push(circle);
-  }
+  // this.interval_id = setInterval(this.draw.bind(this), this.config.framerate);
 };
 
 Canvas.prototype.clear = function() {
-  // this.config.ctx.clearRect(0, 0, this.canvas_width, this.canvas_height);
-
-  // One way of creating a trailing effect
-  this.config.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-  this.config.ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+  this.config.ctx.clearRect(0, 0, this.canvas_width, this.canvas_height);
+  this.particles = [];
+  this.drawScene();
 };
 
 Canvas.prototype.setDimensions = function() {
@@ -82,22 +37,56 @@ Canvas.prototype.setDimensions = function() {
 };
 
 Canvas.prototype.draw = function() {
-  // this.setDimensions();
-
+  const ctx = this.config.ctx;
   // clear existing drawings
   this.clear();
 
-  this.lastMouse_x = (this.mouse_x - this.lastMouse_x) * 0.05;
-  this.lastMouse_y = (this.mouse_y - this.lastMouse_y) * 0.05;
+  // Draw image
+  ctx.drawImage(this.image, 0, 0);
 
-  // Update circle position
-  this.circles.forEach(circle => {
-    circle.update_position(this.mouse_x, this.mouse_y);
-  });
-  // draw circle
-  this.circles.forEach(circle => {
-    circle.draw();
-  });
+  var my_gradient = ctx.createLinearGradient(0, 170, 170, 0);
+  my_gradient.addColorStop(0, "red");
+  my_gradient.addColorStop(0.3, "orange");
+  my_gradient.addColorStop(0.5, "yellow");
+  my_gradient.addColorStop(0.7, "green");
+  my_gradient.addColorStop(0.9, "blue");
+  ctx.fillStyle = my_gradient;
+  my_gradient.addColorStop(1, "purple");
+
+  ctx.fillStyle = my_gradient;
+
+  const data = ctx.getImageData(0, 0, this.image.width, this.image.height);
+  ctx.clearRect(0, 0, this.canvas_width, this.canvas_height);
+
+  for (var y = 0, y2 = data.height; y < y2; y++) {
+    for (var x = 0, x2 = data.width; x < x2; x++) {
+      var p = y * 4 * data.width + x * 4;
+      if (data.data[p + 3] > 129) {
+        var particle = {
+          x0: x,
+          y0: y,
+          x1: this.image.width / 2,
+          y1: this.image.height / 2,
+          speed: Math.random() * 4 + 2,
+          color:
+            "rgb(" +
+            data.data[p] +
+            "," +
+            data.data[p + 1] +
+            "," +
+            data.data[p + 2] +
+            ")"
+        };
+        TweenMax.to(particle, particle.speed, {
+          x1: particle.x0,
+          y1: particle.y0,
+          delay: y / 30,
+          ease: Elastic.easeOut
+        });
+        this.particles.push(particle);
+      }
+    }
+  }
 };
 
 Canvas.prototype.stop = function() {
